@@ -1,0 +1,75 @@
+using modern linux kernel we can isolate any process from others and make that process believe it has its own vm when really it doesn't and that includes isolating filesystems, network interfaces, memory resource access the whole thing 
+
+-------------------commands-------------------
+- images
+docker images 
+docker rmi [image id or name]
+docker pull
+docker inspect [image]
+
+- containers
+https://linuxhandbook.com/list-containers-docker/
+https://linuxhandbook.com/essential-docker-commands/
+https://linuxhandbook.com/docker-ps-command/#:~:text=%20The%20docker%20ps%20command%20%201%20Show,deal%20with%20Container%20IDs%20so%20you...%20More%20
+
+docker ps (shows running containers)
+docker ps -a (shows all containers running/not running)
+docker run
+docker start 
+docker stop
+docker rm [container id]
+docker top [id/name] -> shows top processes 
+docker stats [id/name of container] -> shows stats of container
+docker start -a [id/name] (starts an already created container and we also enter it cause of -a flag)
+we can connect to that container in another shell using docker attach [id]
+
+
+- system
+docker stats
+docker system df
+docker system prune
+ 
+
+
+ ------------------- what are images -------------------
+ docker run ubuntu
+ - this command creates an ubuntu container, tho the container is created, it is not running!
+
+ - to go inside and run the container, we can see details in docker hub details for that image
+ in this case, docker run -it ubuntu runs the container + we go inside it
+
+ NOTE: why does "docker start [id of container]" not work to run the container after it was created using docker run image?
+ https://stackoverflow.com/questions/29599632/docker-container-is-not-running
+
+ docker rm $(docker ps -a -q) (deletes all stopped containers)
+ docker rm $(docker images -q) (deletes all the images that are not used)
+
+
+
+ ------------If want to access something in my pc which is running inside the container----------------
+
+ eg:- docker run -d -p 8080:80 nginx
+ this will run nginx on port 80 inside container
+ and we can access it outside on port 8080
+ so any req on port 8080 will forward it inside container to port 80
+
+
+---------------------dockerfile----------------------
+- a text file with instrucs to build image
+- automation of docker image creation
+
+- following is the order of instrucs in basic Dockerfile, while creating image they are run in order 
+FROM [base image]
+Maintainer
+RUN ->  gets executed while building the image
+CMD -> gets executed when you run the image and create a container out of it
+
+step1
+create file named Dockerfile
+
+step2
+add instructions
+
+step3
+docker build -t imageName:tagName [location of Dockerfile]
+
