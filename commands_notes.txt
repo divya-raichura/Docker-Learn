@@ -23,6 +23,15 @@ docker stats [id/name of container] -> shows stats of container
 docker start -a [id/name] (starts an already created container and we also enter it cause of -a flag)
 we can connect to that container in another shell using docker attach [id]
 
+why -t flag in docker run
+https://stackoverflow.com/questions/30137135/confused-about-docker-t-option-to-allocate-a-pseudo-tty
+
+difference between attach and exec
+https://stackoverflow.com/questions/30960686/difference-between-docker-attach-and-docker-exec
+
+NOTE: docker run is to create new container
+while creating we can specify few things about container eg -p -d --name etc
+but in start we don't have them, we just do docker start [id] and container will have all those things we gave it during creating it using docker run
 
 - system
 docker stats
@@ -31,7 +40,7 @@ docker system prune
  
 
 
- ------------------- what are images -------------------
+ ------------------- more on images -------------------
  docker run ubuntu
  - this command creates an ubuntu container, tho the container is created, it is not running!
 
@@ -46,30 +55,4 @@ docker system prune
 
 
 
- ------------If want to access something in my pc which is running inside the container----------------
-
- eg:- docker run -d -p 8080:80 nginx
- this will run nginx on port 80 inside container
- and we can access it outside on port 8080
- so any req on port 8080 will forward it inside container to port 80
-
-
----------------------dockerfile----------------------
-- a text file with instrucs to build image
-- automation of docker image creation
-
-- following is the order of instrucs in basic Dockerfile, while creating image they are run in order 
-FROM [base image]
-Maintainer
-RUN ->  gets executed while building the image
-CMD -> gets executed when you run the image and create a container out of it
-
-step1
-create file named Dockerfile
-
-step2
-add instructions
-
-step3
-docker build -t imageName:tagName [location of Dockerfile]
 

@@ -1,0 +1,144 @@
+********** Operating systems **********
+
+- if we see all os like ubuntu, fedora, etc they consist of two things -> kerner(interact with hardware) + software(which makes all of the os's different)
+- docker containers share the underlying kernel
+- eg we have docker installed on ubuntu, docker can run any os on it as long as it is based on same kernel in this case, linux.
+In this case we can run fedora, debian, suse, etce ach container has just a different software and docker utilises the underlying kernel of docker host which works with all os above
+but, windows have differnet kernel, hence we can't run windows based container on docker host with linux on it. 
+- when we install docker on windows and run linux container on it, we are running linux container on linux virtual machine or wsl2 under the hood, so it's linux container -> linux vm -> windows
+
+NOTE:
+- when we do 'docker run ubuntu'
+- it runs and stops immediately
+- 'docker ps -a' shows it is in exited state
+- why?
+- unlike vms, containers are not meant to host os, they are meant to run a task or process such as host a server, database, or carry a computational task after that it exits
+- container lives as long as process inside is alive and exits when process dies 
+- ubuntu is not running any process hence it exits immediately
+NOTE: we use exec command to execute command on docker container
+
+
+********** PORT MAPPING **********
+
+- suppose our app is running at port 5000 in container on docker host
+(NOTE : underlying host where docker is installed is called docker host or docker engine)
+- but, how can a user access the app?
+- it is running on port 5000 but what ip do we use to access it from web browser
+- 2 options:
+1)
+- Using ip of docker container, every docker container gets a default ip
+ - this is internal ip and only accessible by docker host, so if we open browser within the docker host, we can go to that ip:5000 and access app
+ - but since it is internal ip, users outside cannot access it
+ 2)
+ - so we use ip of docker host (192.168.1.5) and for that to work we need to map the port inside the container to free port on docker host 
+ - so if we want user to access app using port 80 on docker host, we can map port 80 of local host to port 5000 of container using -p parameter in run command(-p 80:5000)
+ - in this way we can multiple instances of our app and map them to different port on docker host
+ - so we can run many apps which use same port inside container but we map them to different ports on the host
+ NOTE: we can't map to same port on host
+ so,
+-------------------------------------------
+ host port | container/app port | command
+--------------------|-----------|----------  				    
+ 80  	   | 5000 				| -p 80:5000
+ 8001 	   | 5000			    | -p 8001:5000
+ 3306 	   | 3306 				| -p 3306:3306
+ 4306 	   | 3306 				| -p 4306:3306
+ 4306 X	   | 3306 XXXXXXXX		| -p 4306:3306 wrong!!! -> host port 4306 is taken by 4th container
+
+
+
+********** Volume Mapping **********
+- we are running mysql container
+- when data tables, rows etc is created, data files are stored in location /var/lib/mysql inside docker container
+NOTE: Docker container has it's own isolated filesystem, so any changes happen within the container 
+- so, if we remove(delete) the container, container along with all the data in it is deleted
+- if we want to persist the data we need to map the directory outside the container on docker host to directory inside the container
+command: docker run -v /opt/datadir:/var/lib/mysql mysql
+- when container is run, this outside dir is mount to folder inside container, so all data is stored in external volume
+
+
+********** Images **********
+- when docker builds images, it does it in layered arch
+- each line of instruc is new layer in docker images with just the changes from previous layer
+- all layers are cached by docker so that when a particular step fails and we fix issue or we update dockerfile to add new features, when we re run docker build, it will reuse prev layers from cache and continue from there, so that re building is faster and memory is saved
+
+********** CMD vs Entrypoint **********
+- docker run ubuntu -> exists immediately 
+- in docker file of ubuntu, last command is `cmd ["bash"]`
+- bash is not a process like web server or db, it is a shell that listens for input from terminal and if it cannot find terminal, it exits
+- by default, docker does not attach terminal to container when it is run and so bash does not find a terminal and so it exits immediately
+- we can append command to docker run command to override default command of image eg: docker run ubuntu sleep 5
+- but what if we want to make it permanent and sleep 5 sec whenever we start 
+- we need to create image from base ubuntu and specify in command
+FROM ubuntu
+CMD sleep 5 or CMD ["sleep", "5"]
+now, docker build -t ubuntu-sleeper
+docker run ubuntu-sleeper
+- now it auto sleeps for 5 secs and exits
+- if we want to sleep 10 we can append like previously
+- but we would like it to just give args(no of sec to sleep) instead of writing sleep [no] 
+- we use ENTRYPOINT instr for it
+- it is like cmd and whatever we give arg while docker run ubuntu-sleeper [arg] it will run for that many secs
+- to give default secs to it, 
+we use both together
+FROM ubuntu
+ENTRYPOINT ["sleep"]
+CMD ["5"]
+
+********** NETWORKS **********
+- 3 default networks: bridge(default where container gets attached to), none, host
+- if we want cont to associate to another network we use specify it
+docker run ubuntu --network=none
+docker run ubuntu --network=host
+
+********** BRIDGE
+-  container is attached to bridge net by default, to access it externally, we map container port to host port 
+
+********** HOST
+- another way is to associate container to host network using above command, this removes isolation between container and host, so now no need to map ports, container port == host port
+This also means we can't run container with same ports now as we did in bridge network
+
+********** NONE
+- container is not attached to any net and does not have access to other container or external net, they run in isolated net
+
+
+********** 
+- all container associated to default bridge net can communicate with each other
+- using some command, we can isolate containers few in 172.x.x.x and few in suppose 182.x.x.x using commands @1hr
+- how can we make server container access db on db container
+- we can use internal ip add of mysql container, but not ideal cause container may get diff id when sys reboots 
+- we need to use container name as docker has built in dns server 
+
+
+********** Storage **********
+
+- docker stores files related to images, containers, etc in our system in /var/lib/docker
+which has folders like containers,volumes,image etc
+- after docker build ie building image, image layers are created and they are read only, can't modify them, we need to build/create new image inorder to change something
+- after docker run [image] container is created using these imgs and a new writable and temporary layer(container layer) is created which stores temp files like logs or any file modified by user and layer gets deleted when container is deleted
+- so if we make our app and build img, our code is part of image layer and is read only, what if we want to modify code? we can modify it but not the og one, a copied version of file is created in container layer and we modify it, its deleted when container is deleted but og one in image layer(read only) remains as it is and we can make new container using it
+
+
+********** VOLUMES **********
+- to persist data we use volumes
+- docker volume create data_volume
+creates folder in /var/lib/docker/volume
+(not necessary, in below command it auto created the directory if not made using above command)
+- when running cont, we can mount this inside read write layer using 
+docker run -v data_volume:/var/lib/mysql mysql
+ie -v [folder name outside] [path where data is stored in container]
+- so all data created by mysql is stored in host ie in data_volume folder 
+- this is volume mounting
+
+********** what if we had other folder not inside /var/lib/volume,
+where we want to store data
+docker run -v [complete path where our folder is eg /data/mysql] [path inside container where data is stored by default eg for mysql: /var/lib/mysql]  mysql
+- this is called bind mount
+
+********** volume mount : from volume dir
+********** bind mount : from any folder in host
+
+--mount para is another good opt
+
+NOTE:
+storage drivers are responsible to maintain layers, moving files etc

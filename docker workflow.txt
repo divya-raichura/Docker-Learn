@@ -1,0 +1,10 @@
+docker workflow example
+
+- development using js and mongo db pulled from docker hub
+- push to git or vcs
+- continuos integration like jenkins build and it will produce artifacts from our application and create docker image 
+- this image is pushed to a private docker repo(if it is a company)
+- dev server pulls that img from pvt repo and then pulls mongo db that our app depends on from docker hub 
+- now we have two containers, our and publicly available mongo container, they talk to each other as per how you configured them and run as an app
+- so other developer or tester can use and test it from dev server now 
+
